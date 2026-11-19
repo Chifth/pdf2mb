@@ -1,0 +1,22 @@
+# PDF 2MB — Smart PDF Optimizer
+
+> Web service for automatic PDF compression to <= 2000 KB (2 MB) with maximum text sharpness, color stamps/signatures preservation, and intact OCR text layer.
+
+## Key Capabilities
+- **Target size enforcement**: Strictly <= 2000 KB (default 1995 KB) or user-defined target (100 KB – 25 MB).
+- **Automatic strategy selection**:
+  - Vector / text-only PDFs: lossless stream optimization, font subsetting, image recompression.
+  - Contrast scans / documents with color stamps: MRC 300 DPI (CCITT Group 4 1-bit text mask + compressed color layer).
+  - Faint toner / photo-heavy scans: RGB 4:4:4 JPEG / JPEG 2000 with adaptive DPI and quality binary search.
+- **OCR Preservation**: Retains invisible searchable OCR text layer when rasterizing or applying MRC.
+- **Batch Queue & ZIP Export**: Upload multiple PDFs at once, track real-time progress via Server-Sent Events (SSE), download individual files or a combined ZIP archive.
+- **Privacy**: Temporary files are stored only for processing and automatically deleted after TTL expiration (default 1 hour).
+
+## URLs & Endpoints
+- Web App: https://pdf2mb.chifty.top/
+- Health / Readiness: `/healthz`, `/readyz`
+- Queue Status: `GET /api/status`
+- Upload & Compress: `POST /api/jobs` (multipart `files`, optional `target_kb`)
+- Live Progress (SSE): `GET /api/jobs/{job_id}/events`
+- Download Result: `GET /api/download/{job_id}`
+- Batch ZIP: `POST /api/download-zip`

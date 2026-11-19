@@ -123,6 +123,16 @@ class JobManager:
         await self.queue.put(job.id)
         self._notify(job)
 
+    def active_counts(self) -> tuple[int, int, int]:
+        queued = 0
+        processing = 0
+        for j in self.jobs.values():
+            if j.status == "queued":
+                queued += 1
+            elif j.status == "processing":
+                processing += 1
+        return queued, processing, queued + processing
+
     async def _worker_loop(self, worker_id: int) -> None:
         loop = asyncio.get_running_loop()
         while True:
@@ -251,7 +261,26 @@ async def healthz():
 async def readyz():
     if not manager.ready:
         raise HTTPException(status_code=503, detail="Not ready")
-    return {"status": "ready", "workers": settings.compress_workers, "queued": manager.queue.qsize()}
+    queued, processing, total_active = manager.active_counts()
+    return {
+        "status": "ready",
+        "workers": settings.compress_workers,
+        "queued": queued,
+        "processing": processing,
+        "active_total": total_active,
+    }
+
+
+@app.get("/api/status")
+async def get_status():
+    queued, processing, total_active = manager.active_counts()
+    return {
+        "ready": manager.ready,
+        "workers": settings.compress_workers,
+        "queued": queued,
+        "processing": processing,
+        "active_total": total_active,
+    }
 
 
 @app.get("/api/config")

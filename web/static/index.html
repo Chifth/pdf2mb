@@ -1,9 +1,74 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PDF 2MB — Розумне стиснення PDF</title>
+  <title>PDF 2MB — Розумне стиснення PDF до 2 МБ онлайн</title>
+  <meta name="description" content="Швидке та безкоштовне стиснення PDF-документів до 2 МБ (≤ 2000 КБ) із максимальним збереженням чіткості тексту, кольорових печаток та OCR-шару. Автопідбір MRC 300 DPI, RGB 4:4:4 та векторної оптимізації." />
+  <meta name="keywords" content="стиснути PDF, стиснення PDF до 2 МБ, зменшити розмір PDF, оптимізація PDF онлайн, compress PDF 2MB, MRC 300 DPI, OCR PDF" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <link rel="canonical" href="https://pdf2mb.chifty.top/" />
+  <link rel="alternate" type="text/plain" title="LLMs Info" href="llms.txt" />
+
+  <!-- Favicon & App Icons -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="og-image.png" />
+  <meta name="theme-color" content="#f4f7fb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0b1020" media="(prefers-color-scheme: dark)" />
+
+  <!-- OpenGraph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="uk_UA" />
+  <meta property="og:site_name" content="PDF 2MB" />
+  <meta property="og:title" content="PDF 2MB — Розумне стиснення PDF до 2 МБ онлайн" />
+  <meta property="og:description" content="Автоматичне стиснення сканів та векторних PDF до ліміту ≤ 2000 КБ із збереженням чіткості тексту, печаток та OCR-шару." />
+  <meta property="og:url" content="https://pdf2mb.chifty.top/" />
+  <meta property="og:image" content="https://pdf2mb.chifty.top/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PDF 2MB — Розумне стиснення PDF до 2 МБ" />
+  <meta name="twitter:description" content="Швидке стиснення PDF до 2 МБ із автопідбором MRC 300 DPI / RGB 4:4:4 / векторної оптимізації та збереженням OCR." />
+  <meta name="twitter:image" content="https://pdf2mb.chifty.top/og-image.png" />
+
+  <!-- Structured Data for Search Engines & AI Assistants -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PDF 2MB — Smart PDF Optimizer",
+      "url": "https://pdf2mb.chifty.top/",
+      "description": "Веб-сервіс для автоматичного стиснення PDF-документів до 2 МБ (≤ 2000 КБ) із автопідбором стратегії (MRC 300 DPI, RGB 4:4:4, векторна оптимізація) та збереженням OCR-шару.",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "inLanguage": "uk",
+      "browserRequirements": "Requires JavaScript",
+      "featureList": [
+        "Автоматичне стиснення PDF до ≤ 2000 КБ",
+        "Пакетна черга обробки та ZIP-експорт",
+        "Збереження невидимого OCR-шару",
+        "MRC 300 DPI CCITT Group 4 для сканів із печатками",
+        "Векторна оптимізація без втрати якості"
+      ],
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+  </script>
+
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("pdf2mb_theme");
+        const theme = saved === "dark" ? "dark" : "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch (_) {}
+    })();
+  </script>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -16,9 +81,23 @@
           <p class="subtitle">Автопідбір MRC 300 DPI / RGB 4:4:4 / Вектор із збереженням OCR</p>
         </div>
       </div>
-      <div class="server-pill" id="serverPill" title="Стан бекенду">
-        <span class="dot"></span>
-        <span id="serverStatusText">Підключення...</span>
+      <div class="topbar-controls">
+        <div class="server-pill" id="serverPill" title="Живий стан черги на сервері">
+          <span class="dot"></span>
+          <span id="serverStatusText">Підключення...</span>
+        </div>
+        <button type="button" class="theme-toggle" id="themeToggle" aria-label="Перемкнути тему" title="Перемкнути світлу / темну тему">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2"/><path d="M12 20v2"/>
+            <path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/>
+            <path d="M2 12h2"/><path d="M20 12h2"/>
+            <path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/>
+          </svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+        </button>
       </div>
     </div>
   </header>
@@ -42,7 +121,7 @@
           </svg>
         </div>
         <p class="dropzone-title">Перетягніть один або кілька PDF сюди</p>
-        <p class="dropzone-sub">або натисніть, щоб обрати файли на диску</p>
+        <p class="dropzone-sub">Завантаження та оптимізація стартують автоматично</p>
         <button type="button" class="btn btn-primary" id="pickBtn">Обрати PDF-файли</button>
       </div>
 
@@ -81,8 +160,18 @@
         </div>
       </div>
 
+      <div class="overall-progress" id="overallProgressWrap" hidden>
+        <div class="overall-progress-head">
+          <span class="overall-progress-label" id="overallProgressText">Підготовка...</span>
+          <span class="overall-progress-pct" id="overallProgressPct">0%</span>
+        </div>
+        <div class="overall-progress-track">
+          <div class="overall-progress-fill" id="overallProgressFill" style="width: 0%"></div>
+        </div>
+      </div>
+
       <div class="empty-state" id="emptyState">
-        <p>Додайте PDF-файли ліворуч — вони автоматично потраплять у чергу обробки, а посилання на готові оптимізовані документи з’являться тут.</p>
+        <p>Додайте PDF-файли ліворуч — одразу після завантаження вони автоматично потраплять у чергу обробки, а посилання на готові документи з’являться тут.</p>
       </div>
 
       <div class="job-list" id="jobList"></div>
@@ -92,4 +181,3 @@
   <script src="app.js" defer></script>
 </body>
 </html>
-
