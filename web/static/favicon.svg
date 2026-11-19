@@ -10,3 +10,4 @@
   <path d="M36 14v10h10" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"/>
   <text x="32" y="42" text-anchor="middle" fill="#ffffff" font-family="system-ui,-apple-system,Segoe UI,Roboto,sans-serif" font-weight="800" font-size="16" letter-spacing="0.4">2MB</text>
 </svg>
+
