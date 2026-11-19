@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PDF 2MB — Розумне стиснення PDF</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="brand-badge">2MB</span>
+        <div>
+          <h1>PDF Smart Optimizer</h1>
+          <p class="subtitle">Автопідбір MRC 300 DPI / RGB 4:4:4 / Вектор із збереженням OCR</p>
+        </div>
+      </div>
+      <div class="server-pill" id="serverPill" title="Стан бекенду">
+        <span class="dot"></span>
+        <span id="serverStatusText">Підключення...</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <!-- Left panel: Upload & Controls -->
+    <section class="panel upload-panel">
+      <div class="panel-head">
+        <h2>Додати PDF-документи</h2>
+        <span class="hint" id="maxUploadHint">До 100 МБ / файл</span>
+      </div>
+
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Перетягніть PDF файли сюди або натисніть для вибору">
+        <input type="file" id="fileInput" accept="application/pdf,.pdf" multiple hidden />
+        <div class="dropzone-icon" aria-hidden="true">
+          <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="M12 18v-6"/>
+            <path d="m9 15 3-3 3 3"/>
+          </svg>
+        </div>
+        <p class="dropzone-title">Перетягніть один або кілька PDF сюди</p>
+        <p class="dropzone-sub">або натисніть, щоб обрати файли на диску</p>
+        <button type="button" class="btn btn-primary" id="pickBtn">Обрати PDF-файли</button>
+      </div>
+
+      <div class="settings-box">
+        <label class="field-label" for="targetKbInput">Цільовий ліміт розміру (КБ)</label>
+        <div class="target-row">
+          <input type="number" id="targetKbInput" min="100" max="25000" step="5" value="1995" />
+          <div class="presets" id="presets">
+            <button type="button" class="chip" data-kb="990">≤ 1 МБ</button>
+            <button type="button" class="chip active" data-kb="1995">≤ 2 МБ</button>
+            <button type="button" class="chip" data-kb="4950">≤ 5 МБ</button>
+          </div>
+        </div>
+        <p class="field-note">
+          Система автоматично визначає тип скану (контрастний, блідий тонер, векторний PDF), зберігає OCR-шар і витискає максимальну якість під обраний ліміт.
+        </p>
+      </div>
+
+      <div class="error-banner" id="errorBanner" hidden></div>
+    </section>
+
+    <!-- Right panel: Live Queue & Results -->
+    <section class="panel results-panel">
+      <div class="panel-head results-head">
+        <div>
+          <h2>Черга та результати</h2>
+          <p class="summary-line" id="summaryLine">Файлів ще немає</p>
+        </div>
+        <div class="results-actions">
+          <button type="button" class="btn btn-success" id="zipBtn" hidden>
+            Завантажити всі (.zip)
+          </button>
+          <button type="button" class="btn btn-ghost" id="clearBtn" hidden>
+            Очистити
+          </button>
+        </div>
+      </div>
+
+      <div class="empty-state" id="emptyState">
+        <p>Додайте PDF-файли ліворуч — вони автоматично потраплять у чергу обробки, а посилання на готові оптимізовані документи з’являться тут.</p>
+      </div>
+
+      <div class="job-list" id="jobList"></div>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
+

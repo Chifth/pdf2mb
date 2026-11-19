@@ -1,0 +1,27 @@
+services:
+  pdf2mb:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: chifty/pdf2mb:v1.0.0
+    container_name: pdf2mb
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8000}:${PORT:-8000}"
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "${PORT:-8000}"
+      COMPRESS_WORKERS: "${COMPRESS_WORKERS:-2}"
+      MAX_UPLOAD_MB: "${MAX_UPLOAD_MB:-100}"
+      DEFAULT_TARGET_BYTES: "${DEFAULT_TARGET_BYTES:-1995000}"
+      FILE_TTL_SECONDS: "${FILE_TTL_SECONDS:-3600}"
+      CLEANUP_INTERVAL_SECONDS: "${CLEANUP_INTERVAL_SECONDS:-300}"
+      STORAGE_DIR: "${STORAGE_DIR:-/tmp/pdf2mb}"
+      LOG_LEVEL: "${LOG_LEVEL:-info}"
+      ROOT_PATH: "${ROOT_PATH:-}"
+      CORS_ORIGINS: "${CORS_ORIGINS:-*}"
+      PROXY_HEADERS: "${PROXY_HEADERS:-true}"
+      FORWARDED_ALLOW_IPS: "${FORWARDED_ALLOW_IPS:-*}"
+    tmpfs:
+      - /tmp/pdf2mb:size=1024m
+

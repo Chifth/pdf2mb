@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf2mb
+  labels:
+    app: pdf2mb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pdf2mb
+  template:
+    metadata:
+      labels:
+        app: pdf2mb
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+      containers:
+        - name: pdf2mb
+          image: chifty/pdf2mb:v1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+            - name: COMPRESS_WORKERS
+              value: "2"
+            - name: MAX_UPLOAD_MB
+              value: "100"
+            - name: DEFAULT_TARGET_BYTES
+              value: "1995000"
+            - name: FILE_TTL_SECONDS
+              value: "3600"
+            - name: STORAGE_DIR
+              value: "/tmp/pdf2mb"
+            - name: LOG_LEVEL
+              value: "info"
+            - name: PROXY_HEADERS
+              value: "true"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "512Mi"
+            limits:
+              cpu: "2000m"
+              memory: "2Gi"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          volumeMounts:
+            - name: tmp-storage
+              mountPath: /tmp/pdf2mb
+      volumes:
+        - name: tmp-storage
+          emptyDir:
+            sizeLimit: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf2mb
+spec:
+  selector:
+    app: pdf2mb
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+  type: ClusterIP
+
