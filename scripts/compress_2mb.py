@@ -235,9 +235,21 @@ def run_benchmark(pdf_path: str, out_dir: str, max_bytes: int = 1_995_000):
                 bg_xobj = _make_bg_xobj(pdf, bg_im, bg_format, bg_param, subsampling)
                 mask_xobj = _make_mask_xobj(pdf, g4_bytes, mw, mh)
                 page["/Resources"]["/XObject"] = pikepdf.Dictionary({"/MrcBg": bg_xobj, "/MrcMask": mask_xobj})
+                mb = page.MediaBox
+                mb_x0, mb_y0, mb_x1, mb_y1 = float(mb[0]), float(mb[1]), float(mb[2]), float(mb[3])
+                mb_w, mb_h = mb_x1 - mb_x0, mb_y1 - mb_y0
+                rot = int(page.get("/Rotate", 0)) % 360
+                if rot == 90:
+                    cm_str = f"0.0000 {mb_h:.4f} {-mb_w:.4f} 0.0000 {mb_x0 + mb_w:.4f} {mb_y0:.4f} cm"
+                elif rot == 180:
+                    cm_str = f"{-mb_w:.4f} 0.0000 0.0000 {-mb_h:.4f} {mb_x0 + mb_w:.4f} {mb_y0 + mb_h:.4f} cm"
+                elif rot == 270:
+                    cm_str = f"0.0000 {-mb_h:.4f} {mb_w:.4f} 0.0000 {mb_x0:.4f} {mb_y0 + mb_h:.4f} cm"
+                else:
+                    cm_str = f"{mb_w:.4f} 0.0000 0.0000 {mb_h:.4f} {mb_x0:.4f} {mb_y0:.4f} cm"
                 draw_cmd = (
-                    f"\nq {rect.width:.4f} 0 0 {rect.height:.4f} 0 0 cm /MrcBg Do Q\n"
-                    f"q 0.08 0.08 0.08 rg {rect.width:.4f} 0 0 {rect.height:.4f} 0 0 cm /MrcMask Do Q\n"
+                    f"\nq {cm_str} /MrcBg Do Q\n"
+                    f"q 0.08 0.08 0.08 rg {cm_str} /MrcMask Do Q\n"
                 )
                 page["/Contents"] = pikepdf.Stream(pdf, (content_str + draw_cmd).encode("latin1"))
             out = io.BytesIO()

@@ -176,6 +176,35 @@ def _inspect_pdf(pdf_path: str) -> dict:
     }
 
 
+def _mediabox_cm(page: pikepdf.Page) -> str:
+    """Return PDF `cm` matrix string to draw an upright [0,1]x[0,1] image into page MediaBox honoring /Rotate."""
+    mb = page.MediaBox
+    mb_x0, mb_y0, mb_x1, mb_y1 = float(mb[0]), float(mb[1]), float(mb[2]), float(mb[3])
+    mb_w = mb_x1 - mb_x0
+    mb_h = mb_y1 - mb_y0
+    rot = int(page.get("/Rotate", 0)) % 360
+    if rot == 90:
+        a, b, c, d, e, f = 0.0, mb_h, -mb_w, 0.0, mb_x0 + mb_w, mb_y0
+    elif rot == 180:
+        a, b, c, d, e, f = -mb_w, 0.0, 0.0, -mb_h, mb_x0 + mb_w, mb_y0 + mb_h
+    elif rot == 270:
+        a, b, c, d, e, f = 0.0, -mb_h, mb_w, 0.0, mb_x0, mb_y0 + mb_h
+    else:
+        a, b, c, d, e, f = mb_w, 0.0, 0.0, mb_h, mb_x0, mb_y0
+    return f"{a:.4f} {b:.4f} {c:.4f} {d:.4f} {e:.4f} {f:.4f} cm"
+
+
+def _apply_page_rotation(im: Image.Image, rotation: int) -> Image.Image:
+    rot = rotation % 360
+    if rot == 90:
+        return im.transpose(Image.Transpose.ROTATE_270)
+    if rot == 180:
+        return im.transpose(Image.Transpose.ROTATE_180)
+    if rot == 270:
+        return im.transpose(Image.Transpose.ROTATE_90)
+    return im
+
+
 def _render_pages(pdf_path: str, dpi: int, use_native_if_single: bool = False) -> tuple[list[Image.Image], list[fitz.Rect]]:
     doc = fitz.open(pdf_path)
     rects = [p.rect for p in doc]
@@ -183,11 +212,16 @@ def _render_pages(pdf_path: str, dpi: int, use_native_if_single: bool = False) -
     if use_native_if_single:
         for p in doc:
             p_imgs = p.get_images(full=True)
-            if len(p_imgs) == 1:
-                base = doc.extract_image(p_imgs[0][0])
-                if base and base.get("image"):
-                    imgs.append(Image.open(io.BytesIO(base["image"])).convert("RGB"))
-                    continue
+            info_list = p.get_image_info(xrefs=True) if len(p_imgs) == 1 else []
+            if len(p_imgs) == 1 and len(info_list) == 1:
+                t = info_list[0].get("transform", (1, 0, 0, 1, 0, 0))
+                axis_aligned = abs(t[1]) < 1e-3 and abs(t[2]) < 1e-3 and t[0] > 0 and t[3] > 0
+                if axis_aligned:
+                    base = doc.extract_image(p_imgs[0][0])
+                    if base and base.get("image"):
+                        im = Image.open(io.BytesIO(base["image"])).convert("RGB")
+                        imgs.append(_apply_page_rotation(im, p.rotation))
+                        continue
             mat = fitz.Matrix(dpi / 72.0, dpi / 72.0)
             pix = p.get_pixmap(matrix=mat, alpha=False)
             imgs.append(Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
@@ -224,7 +258,8 @@ def _build_single_layer_pdf(
             if "/Resources" not in page:
                 page["/Resources"] = pikepdf.Dictionary()
             page["/Resources"]["/XObject"] = pikepdf.Dictionary({"/Im0": xobj})
-            draw_cmd = f"\nq {rect.width:.4f} 0 0 {rect.height:.4f} 0 0 cm /Im0 Do Q\n"
+            cm_str = _mediabox_cm(page)
+            draw_cmd = f"\nq {cm_str} /Im0 Do Q\n"
             page["/Contents"] = pikepdf.Stream(pdf, (content_str + draw_cmd).encode("latin1"))
         out = io.BytesIO()
         pdf.remove_unreferenced_resources()
@@ -319,9 +354,10 @@ def _build_mrc_pdf(
             if "/Resources" not in page:
                 page["/Resources"] = pikepdf.Dictionary()
             page["/Resources"]["/XObject"] = pikepdf.Dictionary({"/MrcBg": bg_xobj, "/MrcMask": mask_xobj})
+            cm_str = _mediabox_cm(page)
             draw_cmd = (
-                f"\nq {rect.width:.4f} 0 0 {rect.height:.4f} 0 0 cm /MrcBg Do Q\n"
-                f"q 0.08 0.08 0.08 rg {rect.width:.4f} 0 0 {rect.height:.4f} 0 0 cm /MrcMask Do Q\n"
+                f"\nq {cm_str} /MrcBg Do Q\n"
+                f"q 0.08 0.08 0.08 rg {cm_str} /MrcMask Do Q\n"
             )
             page["/Contents"] = pikepdf.Stream(pdf, (content_str + draw_cmd).encode("latin1"))
         out = io.BytesIO()
@@ -496,36 +532,36 @@ def optimize_pdf_auto(input_path: str, output_path: str, target_bytes: int = 1_9
     # Strategy 3B: MRC 300 DPI CCITT G4 + Color Background JPEG (+ OCR)
     imgs_300, rects = _render_pages(input_path, dpi=300, use_native_if_single=info["single_native_imgs"])
 
-    if budget_kib_per_page >= 250.0:
+    if budget_kib_per_page >= 180.0:
         mrc_plan = [
-            (300, 175, 0, "MRC 300+300 4:4:4"),
-            (200, 175, 2, "MRC 300+200 4:2:0"),
-            (150, 165, 2, "MRC 300+150 4:2:0"),
+            (300, 175, 0, "MRC 300+300 4:4:4", 45),
+            (200, 175, 2, "MRC 300+200 4:2:0", 25),
+            (150, 165, 2, "MRC 300+150 4:2:0", 18),
         ]
-    elif budget_kib_per_page >= 160.0:
+    elif budget_kib_per_page >= 130.0:
         mrc_plan = [
-            (200, 175, 2, "MRC 300+200 4:2:0"),
-            (150, 165, 2, "MRC 300+150 4:2:0"),
+            (200, 175, 2, "MRC 300+200 4:2:0", 25),
+            (150, 165, 2, "MRC 300+150 4:2:0", 18),
         ]
     else:
         mrc_plan = [
-            (150, 165, 2, "MRC 300+150 4:2:0"),
-            (120, 160, 2, "MRC 300+120 4:2:0"),
+            (150, 165, 2, "MRC 300+150 4:2:0", 18),
+            (120, 160, 2, "MRC 300+120 4:2:0", 18),
         ]
 
     best_bytes: bytes | None = None
     best_meta: tuple[str, str, str, bool] | None = None
 
-    for dpi_bg, text_t, sub, label in mrc_plan:
+    for dpi_bg, text_t, sub, label, min_q in mrc_plan:
         masks_g4, bg_imgs = _prepare_mrc_layers(imgs_300, dpi_mask=300, dpi_bg=dpi_bg, text_thresh=text_t)
         for keep_ocr_try in ([True, False] if has_ocr else [False]):
             q, b = _binsearch_max(
                 lambda q_val: _build_mrc_pdf(input_path, masks_g4, bg_imgs, rects, q_val, sub, keep_ocr_try),
-                18,
+                min_q,
                 95,
                 target_bytes,
             )
-            if len(b) <= target_bytes:
+            if len(b) <= target_bytes and q >= min_q:
                 best_bytes = b
                 sub_str = "4:4:4" if sub == 0 else "4:2:0"
                 best_meta = (
